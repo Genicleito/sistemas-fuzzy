@@ -1,18 +1,29 @@
-# Função Triangular
-fuzzy_triangular <- function (x, a, m, b) {
-  if (x == m) {
-    return (1)
+# Triangular Membership Function
+triangular.memb.function <- function(x, a, m, b) {
+  if(x < a || x > b) {
+    return(0)
   }
-  if (x >= a && x < m) {
-    return ( (x - a) / (m - a)  )
+  if(x <= m) {
+    ((x - a) / (m - a))
+  } else {
+    ((b - x) / (b - m))
   }
-  if (x >= m && x < b) {
-    return ( (b - x) / (b - m) )
-  }
-  return (0)
 }
 
-# Função trapezoidal
+# fuzzy_triangular <- function (x, a, m, b) {
+#   if (x == m) {
+#     return (1)
+#   }
+#   if (x >= a && x < m) {
+#     return ( (x - a) / (m - a)  )
+#   }
+#   if (x >= m && x < b) {
+#     return ( (b - x) / (b - m) )
+#   }
+#   return (0)
+# }
+
+# Trapezoidal Membership Function
 fuzzy_trapezoidal <- function(x, a, m, n, b) {
   if (x < a || x >= b) {
     return(0)
