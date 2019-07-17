@@ -24,7 +24,15 @@ triangular.fuzzy.regions.points = function(values, domain.interval, n.regions) {
   
   interval.length = abs(max.value - min.value)
   
-  dist.inter.points = interval.length / (n.regions - 1)
+  if(n.regions > 1) {
+    dist.inter.points = interval.length / (n.regions - 1)
+  } else if (n.regions == 1) {
+    # Only one fuzzy set
+    dist.inter.points = interval.length / 2
+    points.fuzzy.regions = seq(min.value, max.value, dist.inter.points)
+    return (data.frame(values = points.fuzzy.regions, degree = c(0, 1, 0)))
+  }
+  
   points.fuzzy.regions = seq(min.value, max.value, dist.inter.points)
   
   all.values.points = c()
