@@ -1,0 +1,1 @@
+	 Caracteres | especiais estão presentes em vários datasets, \n\n inclusive neste [inclusido propositalmente], para testar o comando | sed | com expressão regular; penultima linha\nultima linha
