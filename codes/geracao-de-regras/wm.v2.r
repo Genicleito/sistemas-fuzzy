@@ -19,8 +19,8 @@ row.names(domain.interval) = c("min", "max")
 
 # Function to get points of fuzzy triangular functions
 triangular.fuzzy.regions.points = function(values, domain.interval, n.regions) {
-  min.value = domain.interval[1, 1]
-  max.value = domain.interval[2, 1]
+  min.value = domain.interval[[1]]
+  max.value = domain.interval[[2]]
   
   interval.length = abs(max.value - min.value)
   
@@ -52,7 +52,49 @@ triangular.fuzzy.regions.points = function(values, domain.interval, n.regions) {
   data.frame(values = all.values.points, degree = all.degrees)
 }
 
+# Function to get max degrees and relatve regions of this max degrees
+step2 = function(given.data.pairs, points.fuzzy.function, type.fuzzy.function = "tg") {
+  # type.fuzzy.function = "tg" (triangular function)
+  # type.fuzzy.function = "tz" (trapezoidal function)
+  
+  # by default (case type of membership fuzzy function is triangular)
+  jump = 3
+  
+  # doing...
+  if (type.fuzzy.function == "tz") {
+    jump = 4
+  }
+  
+  # columns of return's dataframe
+  max.degrees = c()
+  relative.region.of.max.degree = c()
+  
+  # for each value of this variable
+  for (x in given.data.pairs) {
+    degrees.of.value = c()
+    
+    # for each fuzzy region
+    for (i in seq(to = length(points.fuzzy.function), by = jump)) {
+      a = points.fuzzy.function[i]
+      m = points.fuzzy.function[i + 1]
+      b = points.fuzzy.function[i + 2]
+      
+      degrees.of.value = c(degrees.of.value, triangular.memb.function(x, a, m, b))
+    }
+    # max of degrees obtained for x
+    max.degrees = c(max.degrees, max( degrees.of.value ))
+    # relative region of the max degree of x
+    relative.region.of.max.degree = c(relative.region.of.max.degree, which.max(degrees.of.value))
+  }
+  # return df with max degrees and relatives fuzzy regions
+  data.frame(max.degree = max.degrees, relative.region.of.max.degree = relative.region.of.max.degree)
+}
+
 
 # Example: testing the method
 n.regions = 5
-triangular.fuzzy.regions.points(values = data$Sepal.Length, domain.interval = domain.interval, n.regions = n.regions)
+regions.points = triangular.fuzzy.regions.points(values = data$Sepal.Length, domain.interval = domain.interval[, 1], n.regions = n.regions)
+
+
+# Step 2 - Generate Fuzzy Rules from Givem Data pairs
+step2(data$Sepal.Length, regions.points[, 1])
