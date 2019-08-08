@@ -3,6 +3,9 @@ triangular.memb.function <- function(x, a, m, b) {
   if(x < a || x > b) {
     return(0)
   }
+  if(x == m) {
+    return(1)
+  }
   if(x <= m) {
     ((x - a) / (m - a))
   } else {
