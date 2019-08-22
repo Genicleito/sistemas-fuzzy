@@ -18,9 +18,9 @@ row.names(domain.interval) = c("min", "max")
 # Fuzzy regions
 
 # Function to get points of fuzzy triangular functions
-triangular.fuzzy.regions.points = function(values, domain.interval, n.regions) {
-  min.value = domain.interval[[1]]
-  max.value = domain.interval[[2]]
+triangular.fuzzy.regions.points = function(domain.interval, n.regions) {
+  min.value = domain.interval[1]
+  max.value = domain.interval[2]
   
   interval.length = abs(max.value - min.value)
   
@@ -53,7 +53,7 @@ triangular.fuzzy.regions.points = function(values, domain.interval, n.regions) {
 }
 
 # Function to get max degrees and relatve regions of this max degrees
-step2 = function(given.data.pairs, points.fuzzy.function, type.fuzzy.function = "tg") {
+step2 = function(values.and.fuzzy.points, type.fuzzy.function = "tg") {
   # type.fuzzy.function = "tg" (triangular function)
   # type.fuzzy.function = "tz" (trapezoidal function)
   
@@ -69,15 +69,18 @@ step2 = function(given.data.pairs, points.fuzzy.function, type.fuzzy.function = 
   max.degrees = c()
   relative.region.of.max.degree = c()
   
+  region.values = unlist(values.and.fuzzy.points$values)
+  fuzzy.points = unlist(values.and.fuzzy.points$points)
+  
   # for each value of this variable
-  for (x in given.data.pairs) {
+  for (x in region.values) {
     degrees.of.value = c()
     
     # for each fuzzy region
-    for (i in seq(to = length(points.fuzzy.function), by = jump)) {
-      a = points.fuzzy.function[i]
-      m = points.fuzzy.function[i + 1]
-      b = points.fuzzy.function[i + 2]
+    for (i in seq(to = length(fuzzy.points), by = jump)) {
+      a = fuzzy.points[i]
+      m = fuzzy.points[i + 1]
+      b = fuzzy.points[i + 2]
       
       degrees.of.value = c(degrees.of.value, triangular.memb.function(x, a, m, b))
     }
@@ -90,11 +93,54 @@ step2 = function(given.data.pairs, points.fuzzy.function, type.fuzzy.function = 
   data.frame(max.degree = max.degrees, relative.region.of.max.degree = relative.region.of.max.degree)
 }
 
+combine.degrees.and.regions = function(max.degrees.and.regions) {
+  max.degrees.table = NULL
+  regions.max.degree = NULL
+  for(i in 1:length(max.degrees.and.regions)) {
+    max.degrees.table = cbind(max.degrees.table, max.degrees.and.regions[[i]]$max.degree)
+    regions.max.degree = cbind(regions.max.degree, max.degrees.and.regions[[i]]$relative.region.of.max.degree)
+  }
+  list(max.degrees.table = max.degrees.table, regions.max.degree = regions.max.degree)
+}
+
+# ids.ambiguos.rules = function(rules) {
+#   duplicates = apply(rules, 2, duplicated)
+#   ids.duplicates = c()
+#   for(i in 1:nrow(rules)) {
+#     is.duplicate = unique(rules[i, ])
+#     if(length(is.duplicate) == 1 && is.duplicate == TRUE) {
+#       ids.duplicates = c(ids.duplicates, i)
+#     }
+#   }
+#   ids.duplicates
+# }
+
 
 # Example: testing the method
 n.regions = 5
-regions.points = triangular.fuzzy.regions.points(values = data$Sepal.Length, domain.interval = domain.interval[, 1], n.regions = n.regions)
+# regions.points = triangular.fuzzy.regions.points(domain.interval, n.regions = n.regions)
+regions.points = apply(domain.interval, 2, triangular.fuzzy.regions.points, n.regions)
 
+############ Step 2 - Generate Fuzzy Rules from Givem Data pairs
+pairs.values.points = list()
+for (i in 1:length(data)){
+  pairs.values.points[[i]] = list(values = data[, i], points = regions.points[[i]][1])
+}
+max.degrees = lapply(pairs.values.points, step2)
 
-# Step 2 - Generate Fuzzy Rules from Givem Data pairs
-step2(data$Sepal.Length, regions.points[, 1])
+############ end step 2 ############
+
+# Combine degrees and fuzzy regions into two dataframes in list
+degrees.and.regions = combine.degrees.and.regions(max.degrees)
+
+fuzzy.regions.with.max.degree = degrees.and.regions$regions.max.degree
+max.degrees.variables = degrees.and.regions$max.degrees.table
+
+############ step 3 ############
+# remove ambiguous rules
+# DOING...
+
+# getting the rule degree with antecedents product
+rules.degree = apply(max.degrees.variables, 1, prod)
+
+############ end step 3 ############
