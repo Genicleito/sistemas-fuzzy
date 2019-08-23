@@ -1,4 +1,6 @@
 source("https://raw.githubusercontent.com/Genicleito/sistemas-fuzzy/master/membership-functions/funcoesPertinenciaFuzzy.r")
+library(rlan)
+library(dplyr)
 
 # Dataset to use in algorithm
 data = iris[, -ncol(iris)]
@@ -103,17 +105,17 @@ combine.degrees.and.regions = function(max.degrees.and.regions) {
   list(max.degrees.table = max.degrees.table, regions.max.degree = regions.max.degree)
 }
 
-# ids.ambiguos.rules = function(rules) {
-#   duplicates = apply(rules, 2, duplicated)
-#   ids.duplicates = c()
-#   for(i in 1:nrow(rules)) {
-#     is.duplicate = unique(rules[i, ])
-#     if(length(is.duplicate) == 1 && is.duplicate == TRUE) {
-#       ids.duplicates = c(ids.duplicates, i)
-#     }
-#   }
-#   ids.duplicates
-# }
+# Drop duplicates rows in rule base (same antecedents and different consequents)
+# Are maintained the rules with the highest degree in the consequent
+drop.duplicates = function(rules.base) {
+  ant.rules = rules.base %>% colnames %>% rlang::syms()
+  
+  # consider only the antecedent in deduplication
+  ant.rules[[length(ant.rules)]] = NULL
+  
+  # return the rule base deduplicated, keeping the rules to the highest degree in the consequent
+  rules.base %>% arrange(desc(rules.degree)) %>% distinct(!!!cols, .keep_all = TRUE)
+}
 
 
 # Example: testing the method
@@ -133,14 +135,19 @@ max.degrees = lapply(pairs.values.points, step2)
 # Combine degrees and fuzzy regions into two dataframes in list
 degrees.and.regions = combine.degrees.and.regions(max.degrees)
 
-fuzzy.regions.with.max.degree = degrees.and.regions$regions.max.degree
+fuzzy.regions.with.max.degree = as.data.frame(degrees.and.regions$regions.max.degree)
 max.degrees.variables = degrees.and.regions$max.degrees.table
 
 ############ step 3 ############
 # remove ambiguous rules
-# DOING...
 
 # getting the rule degree with antecedents product
 rules.degree = apply(max.degrees.variables, 1, prod)
+
+# bind of the antecedents fuzzy regions variables with degree of rule
+rules = cbind(fuzzy.regions.with.max.degree, rules.degree)
+
+# drop duplicates rows
+rules = drop.duplicates(rules)
 
 ############ end step 3 ############
