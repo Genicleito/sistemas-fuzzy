@@ -1,10 +1,13 @@
 import os
+
 seds = [
     "sed -r 's/\\;//g' /tmp/teste.csv > /tmp/out_.csv # apaga todos os ; presentes na base",
     "sed -r 's/\\\"\,\\\"/;/g' /tmp/out_.csv > /tmp/out.csv # substitui o separador por ;",
     
-    "sed -r 's/\\\\\;/;/g' /tmp/out.csv > /tmp/out_.csv # remove escapes de separador",
-    "sed -r 's/\\\\\\\"//g' /tmp/out_.csv > /tmp/out.csv # remove aspas escapadas",
+    # Adicionada a expresão '+'' aos seds que consideram a presença de contra-barra para permitir afetar uma ou mais contra-barras
+    "sed -r 's/\\\\+\;/;/g' /tmp/out.csv > /tmp/out_.csv # remove escapes de separador",
+    "sed -r 's/\\\\+\\\"//g' /tmp/out_.csv > /tmp/out.csv # remove aspas escapadas",
+
     "sed -r 's/^\\\"|\"$/_cidacs_control_quotes_/g' /tmp/out.csv > /tmp/out_.csv # guarda as aspas dos campos",
     "sed -r 's/\\\"|\,//g' /tmp/out_.csv > /tmp/out.csv # remove aspas não escapadas e vírgulas no meio dos campos",
     
@@ -13,9 +16,10 @@ seds = [
 ]
 for sed in seds:
     error = False
+    print("Appling: " + sed)
     if(os.system(sed) != 0):
         error = True
-        print("ERROR in " + sed)
+        print("[ERROR]")
         break
 if not error:
     print("SUCESS")
