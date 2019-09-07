@@ -108,13 +108,43 @@ combine.degrees.and.regions = function(max.degrees.and.regions) {
 # Drop duplicates rows in rule base (same antecedents and different consequents)
 # Are maintained the rules with the highest degree in the consequent
 drop.duplicates = function(rules.base) {
-  ant.rules = rules.base %>% colnames %>% rlang::syms()
+  ant.var = rules.base %>% colnames %>% rlang::syms()
   
   # consider only the antecedent in deduplication
-  ant.rules[[length(ant.rules)]] = NULL
+  ant.var[[length(ant.var)]] = NULL
   
   # return the rule base deduplicated, keeping the rules to the highest degree in the consequent
-  rules.base %>% arrange(desc(rules.degree)) %>% distinct(!!!cols, .keep_all = TRUE)
+  rules.base %>% arrange(desc(rules.degree)) %>% distinct(!!!ant.var, .keep_all = TRUE)
+}
+
+# get.membership.degree(x, p) {
+#   triangular.memb.function(x, p[1], p[2], p[3])
+# }
+
+max.degree.rule = function(rule, values, regions.points.all.variables) {
+  r = c()
+
+  for (i in 1:(length(rule) - 1)) {
+    regions.points = regions.points.all.variables[i][[1]]$values
+    region.id = as.numeric(rule[i])
+    id = 3 * (region.id - 1) + 1
+    x = values[i]
+    
+    a = regions.points[id]
+    m = regions.points[id + 1]
+    b = regions.points[id + 2]
+    
+    # cat("x = ", x, "\ta = ", a, "\tm = ", m, "\tb = ", b, "\n")
+    r = c(r, triangular.memb.function(x, a, m, b))
+    # cat("r = ", r, "\n")
+  }
+  # t-norm or t-conorm ?
+  max(r)
+}
+
+# doing...
+degree.in.region = function(values, rules, regions.points.all.variables) {
+  mean(apply(rules, 1, max.degree.rule, values, regions.points.all.variables))
 }
 
 
@@ -151,3 +181,12 @@ rules = cbind(fuzzy.regions.with.max.degree, rules.degree)
 rules = drop.duplicates(rules)
 
 ############ end step 3 ############
+
+
+# Obtain the degree of each record in test dataset
+df.test = data.frame(x1 = c(5.5, 6.9, 1), x2 = c(2.7, 1.5, 2), x3 = c(4.2, 2, 3), x4 = c(1.5, 2, 4))
+
+degrees.in.rules = c()
+degrees.in.rules = c(degrees.in.rules, apply(df.test, 1, degree.in.region, rules, regions.points))
+degrees.in.rules
+
