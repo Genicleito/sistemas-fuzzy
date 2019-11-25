@@ -85,18 +85,88 @@ calc.vagueness = function(U) {
 
 # Definition 7
 fuzzy.evidence = function(C, E) {
-  sum(pmin(E, C)) / sum(E)
+  sum(pmin(as.numeric(unlist(E)), as.numeric(unlist(C)))) / sum(as.numeric(unlist(E)))
 }
 
-# Definition 9
+# Definition 9 - C is all sub categories of variable C
 normalized.possible.distribution = function(E, C) {
   r = apply(C, 2, fuzzy.evidence, E)
   r / max(r)
 }
 
+# Definition 5
+attribute.ambiguity = function(p.d) {
+  p.d = c(p.d, 0)
+  r = c()
+  for(i in 1:(length(p.d) - 1)) {
+    r = c(r, (p.d[i] - p.d[i + 1])*log(i))
+  }
+  sum(r)
+}
 
-train.data = iris[, c(1:4)]
-m = calc.m(train.data, 3)
-mapping.degrees = fill.membership.degree(train.data, m)
-vagueness = apply(mapping.degrees, 2, calc.vagueness)
-# normalized.possible.distribution(t.hot, data.frame(p.volleyball, swimming, w_lifting))
+# Ambiguity of A let evidence E
+calculateAmbiguityWithEvidence = function(E, A) {
+  A = data.frame(A)
+  e = data.frame(E)
+  if (nrow(A) < nrow(e)) {
+    for (i in 1:(nrow(e) - nrow(A))) {
+      A = rbind(A, 0)
+    }
+  }
+  attribute.ambiguity(
+    sort(normalized.possible.distribution(E, A), decreasing = T)
+  )
+}
+
+# Calculate the fuzzy classification ambiguity (step 1 of classification)
+calculateAttributeAmbiguity = function(A) {
+  A = data.frame(A)
+  r = c()
+  # attribute.ambiguity(as.numeric(sort(apply(A, 1, max), decreasing = T)))
+  for(i in 1:nrow(A)) {
+    if (max(A[i, ]) == 0) {
+      A[i, 1] = 1
+    }
+    r = c(r, attribute.ambiguity(as.numeric(sort(A[i, ] / max(A[i, ]), decreasing = T))))
+  }
+  mean(r)
+}
+
+# for calculate intersection between two attributes
+calculateIntersection = function(X, Y) {
+  pmin(X, Y)
+  # r = c()
+  # for(i in 1:length(X)) {
+  #   x = X[i]
+  #   if (x %in% Y) {
+  #     r = c(r, x)
+  #   }
+  # }
+  # data.frame(r)
+}
+
+# Definition 12 - Equation 11
+calc.weight.fuzzy.partition = function(e, E, f) {
+  sum(pmin(e, f)) / sum(apply(E, 2, pmin, f))
+}
+
+partition.ambiguity = function(P, f) {
+  r = c()
+  for(j in 1:ncol(P)) {
+    e = P[, j]
+    intersection = calculateIntersection(e, f)
+    r = c(r, calc.weight.fuzzy.partition(e, P, f) * attribute.ambiguity(intersection))
+  }
+  sum(r)
+}
+
+# # To read my dataset
+# train.data = iris[, c(1:4)]
+# m = calc.m(train.data, 3)
+# mapping.degrees = fill.membership.degree(train.data, m)
+# vagueness = apply(mapping.degrees, 2, calc.vagueness)
+
+df = read.csv("../Dropbox/Compartilhados/PGCOMP/Aluno Especial/2019.2/Grafos/Trabalho Final/database.csv")
+
+# Calcule the Gain of partition
+partition.ambiguity(df[, 1:3], df[, 4])
