@@ -88,13 +88,13 @@ fuzzy.evidence = function(C, E) {
   sum(pmin(as.numeric(unlist(E)), as.numeric(unlist(C)))) / sum(as.numeric(unlist(E)))
 }
 
-# Definition 9 - C is all sub categories of variable C
-normalized.possible.distribution = function(E, C) {
-  r = apply(C, 2, fuzzy.evidence, E)
-  r / max(r)
-}
+# # Definition 9 - C is all sub categories of variable C
+# normalized.possible.distribution = function(E, C) {
+#   r = apply(C, 2, fuzzy.evidence, E)
+#   r / max(r)
+# }
 
-# Definition 5
+# Definition 5 - Ambiguity or nonspecificity measure
 attribute.ambiguity = function(p.d) {
   p.d = c(p.d, 0)
   r = c()
@@ -118,7 +118,7 @@ calculateAmbiguityWithEvidence = function(E, A) {
   )
 }
 
-# Calculate the fuzzy classification ambiguity (step 1 of classification)
+# Calculate the fuzzy classification ambiguity (step 1 of classification) - Checked
 calculateAttributeAmbiguity = function(A) {
   A = data.frame(A)
   r = c()
@@ -145,19 +145,70 @@ calculateIntersection = function(X, Y) {
   # data.frame(r)
 }
 
+# # Definition 12 - Equation 11
+# calc.weight.fuzzy.partition = function(e, E, y) {
+#   # sum(pmin(e, f)) / sum(apply(E, 2, pmin, f))
+#   a = subsethood(e, y)
+#   r = c()
+#   for (j in 1:ncol(E)) {
+#     yj = E[, j]
+#     r = c(r, subsethood(e, yj))
+#   }
+#   b = max(r)
+#   a / b
+# }
+
+classification.ambiguity = function(E, C) {
+  r = c()
+  for (j in 1:ncol(C)) {
+    r = c(r, normalized.possible.distribution(E, C[, j], C))
+  }
+  print(r)
+  attribute.ambiguity(sort(r, decreasing = T))
+}
+
+# Checked
+subsethood = function(A, B) {
+  sum(pmin(A, B)) / sum(A)
+}
+
+# Normalized distribution - C is a set of classes, y is the term to predict
 # Definition 12 - Equation 11
-calc.weight.fuzzy.partition = function(e, E, f) {
-  sum(pmin(e, f)) / sum(apply(E, 2, pmin, f))
+normalized.possible.distribution = function(E, Ci, C) {
+  r = c()
+  a = subsethood(E, Ci)
+  for(j in 1:ncol(C)) {
+    r = c(r, subsethood(E, C[, j]))
+  }
+  a / max(r)
 }
 
 partition.ambiguity = function(P, f) {
-  r = c()
-  for(j in 1:ncol(P)) {
-    e = P[, j]
-    intersection = calculateIntersection(e, f)
-    r = c(r, calc.weight.fuzzy.partition(e, P, f) * attribute.ambiguity(intersection))
+  # # README: A parte que calcula o G(X ^ Y) pode estar errada, olhar melhor. usar calc.weight.fuzzy.partition
+  # # # Example:
+  # # attribute.ambiguity(calculateIntersection(df[, 3], df[, 4]))
+  # # calc.weight.fuzzy.partition(e = df[, 3], E=df[, 1:3], f = df[, 4])
+  # r = c()
+  # for(j in 1:ncol(P)) {
+  #   e = P[, j]
+  #   intersection = calculateIntersection(e, f)
+  #   # X = calc.weight.fuzzy.partition(e = e, E = P, y = f)
+  #   X = calculateAmbiguityWithEvidence(E = intersection, A = P)
+  #   Y = attribute.ambiguity(calculateIntersection(f, e))
+  #   cat("X = ", X, "\nY = ", Y, "\n\n")
+  #   # r = c(r, calc.weight.fuzzy.partition(e = e, E = P, y = f) * attribute.ambiguity(intersection))
+  #   r = c(r, X * Y)
+  # }
+  # r
+  # # sum(r)
+  col = 3
+  x = classification.ambiguity(calculateIntersection(df[, 4], df[, col]), C = df[, 11:13])
+  y = sum(calculateIntersection(df[, col], df[, 4]))
+  r = 0
+  for (j in 1:ncol(df[, 1:3])) {
+    r = r + sum(calculateIntersection(df[, 4], df[, j]))
   }
-  sum(r)
+  y/r
 }
 
 # # To read my dataset
